@@ -19,14 +19,12 @@ eureka:
     serviceUrl:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
 
-zuul:
-  ignoredServices: "*"
-  routes:
-    user-svcs: /user-svcs/**
 
 server:
   port: ${appPort:8083}
   
+info:
+  component: Zuul API gateway (insecured)
     
 management:
   health:
