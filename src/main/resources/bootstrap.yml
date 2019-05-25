@@ -3,7 +3,10 @@ spring:
     name: zuul-gateway
   cloud:
     config:
-      uri: ${CONFIG_SERVER_URL:http://localhost:8082}
+      discovery:
+        enabled: true
+      enabled: true 
+      uri: ${CONFIG_SERVER_URL:http://localhost:8888}  
 
 eureka:
   instance:
