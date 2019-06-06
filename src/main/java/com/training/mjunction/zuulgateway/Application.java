@@ -1,34 +1,19 @@
 package com.training.mjunction.zuulgateway;
 
-import java.io.IOException;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.Set;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.WebUtils;
+
+import com.netflix.zuul.ZuulFilter;
+import com.netflix.zuul.context.RequestContext;
 
 import brave.sampler.Sampler;
 
@@ -36,7 +21,6 @@ import brave.sampler.Sampler;
 @EnableZuulProxy
 @EnableDiscoveryClient
 @SpringBootApplication
-@EnableAutoConfiguration
 public class Application extends SpringBootServletInitializer {
 
 	@Override
@@ -54,47 +38,36 @@ public class Application extends SpringBootServletInitializer {
 	}
 
 	@Component
-	@EnableOAuth2Sso
-	protected static class UiApplicationConfig extends WebSecurityConfigurerAdapter {
+	// XXX While waiting for:
+	// https://github.com/spring-cloud/spring-cloud-netflix/issues/944
+	public class RelayTokenFilter extends ZuulFilter {
+		@Override
+		public Object run() {
+			final RequestContext ctx = RequestContext.getCurrentContext();
+
+			// Alter ignored headers as per:
+			// https://gitter.im/spring-cloud/spring-cloud?at=56fea31f11ea211749c3ed22
+			@SuppressWarnings("unchecked")
+			final Set<String> headers = (Set<String>) ctx.get("ignoredHeaders");
+			// We need our JWT tokens relayed to resource servers
+			headers.remove("authorization");
+
+			return null;
+		}
 
 		@Override
-		public void configure(final HttpSecurity http) throws Exception {
-			http.logout().and().antMatcher("/**").authorizeRequests()
-					.antMatchers("/index.html", "/home.html", "/testing.html", "/", "/login").permitAll().anyRequest()
-					.authenticated().and().csrf().csrfTokenRepository(csrfTokenRepository()).and()
-					.addFilterAfter(csrfHeaderFilter(), CsrfFilter.class);
+		public boolean shouldFilter() {
+			return true;
 		}
 
 		@Override
-		public void configure(final WebSecurity web) throws Exception {
-			web.ignoring().antMatchers("/hystrix.stream", "/actuator/**", "/js/**", "/css/**", "/*.html", "/*.htm",
-					"/*.jsp", "/swagger-ui.html", "/v2/api-docs");
+		public String filterType() {
+			return "pre";
 		}
 
-		private Filter csrfHeaderFilter() {
-			return new OncePerRequestFilter() {
-				@Override
-				protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response,
-						final FilterChain filterChain) throws ServletException, IOException {
-					final CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-					if (csrf != null) {
-						Cookie cookie = WebUtils.getCookie(request, "XSRF-TOKEN");
-						final String token = csrf.getToken();
-						if (cookie == null || token != null && !token.equals(cookie.getValue())) {
-							cookie = new Cookie("XSRF-TOKEN", token);
-							cookie.setPath("/");
-							response.addCookie(cookie);
-						}
-					}
-					filterChain.doFilter(request, response);
-				}
-			};
-		}
-
-		private CsrfTokenRepository csrfTokenRepository() {
-			final HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
-			repository.setHeaderName("X-XSRF-TOKEN");
-			return repository;
+		@Override
+		public int filterOrder() {
+			return 10000;
 		}
 	}
 
