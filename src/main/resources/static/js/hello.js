@@ -10,7 +10,7 @@ angular.module('hello', [ 'ngRoute', 'ngSanitize', 'ngPrettyJson' ]).config(func
 	self.tab = function(route) {
 		return $route.current && route === $route.current.controller;
 	};
-	$http.get('auth/user').then(function(response) {
+	$http.get('/uaa/auth/user').then(function(response) {
 		if (response.data.name) {
 			$rootScope.authenticated = true;
 		} else {
