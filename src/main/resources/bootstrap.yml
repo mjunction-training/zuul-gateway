@@ -11,7 +11,8 @@ spring:
       enabled: true 
   zipkin:
     discovery-client-enabled: true
-    service:      name: zipkin-server
+    service:
+      name: zipkin-server
   boot:
     admin:
       client:
@@ -25,18 +26,14 @@ ribbon:
     enabled: true
 
 zuul:
-  ignoredServices: '*'
-  ignoredHeaders: 
-  ignoreSecurityHeaders: false
   routes:
-    product-catalog: 
-      path: /product-catalog/**
+    product-catalog: /product-catalog/**
+    user-svcs: /user-svcs/**
+    uaa-service:
       sensitiveHeaders:
-      service-id: product-catalog    user-svcs:  
-      path: /user-svcs/**
-      sensitiveHeaders:
-      service-id: user-svcs
-     
+      path: /uaa/**
+      stripPrefix: false
+  add-proxy-headers: true
       
   
 debug: true
@@ -95,4 +92,17 @@ logging:
     org.apache.catalina.core: ERROR
     com.sun.jersey.server.impl: ERROR
 
-      
+security:
+  oauth2:
+    sso:
+      loginPath: /login
+    client:
+      accessTokenUri: http://uaa-service/uaa/oauth/token
+      userAuthorizationUri: /uaa/oauth/authorize
+      clientId: oauth2-read-write-client
+      clientSecret: Pass@123
+    resource:
+      jwt:
+        keyValue: classpath:certs/selfsigned-public-key.txt
+      id: openid
+      serviceId: ${PREFIX:}resource
