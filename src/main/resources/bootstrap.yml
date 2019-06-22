@@ -26,15 +26,8 @@ ribbon:
     enabled: true
 
 zuul:
-  routes:
-    product-catalog: /product-catalog/**
-    user-svcs: /user-svcs/**
-    uaa-service:
-      sensitiveHeaders:
-      path: /uaa/**
-      stripPrefix: false
   add-proxy-headers: true
-      
+  sensitiveHeaders:
   
 debug: true
   
@@ -72,6 +65,23 @@ management:
       show-details: always
     shutdown: 
       enabled: true
+
+
+security:
+  oauth2:
+    sso:
+      loginPath: /login
+    client:
+      accessTokenUri: http://localhost:8769/uaa/oauth/token
+      userAuthorizationUri: http://localhost:8769/uaa/oauth/authorize
+      clientId: oauth2-read-write-client
+      clientSecret: Pass@123
+    resource:
+      jwt:
+        key-uri: http://localhost:8769/uaa/oauth/token_key
+      id: openid
+      serviceId: ${PREFIX:}resource
+
       
 # Logging
 logging:
@@ -90,19 +100,4 @@ logging:
     org.glassfish.jersey.internal.util: ERROR
     org.apache.tomcat.util: ERROR
     org.apache.catalina.core: ERROR
-    com.sun.jersey.server.impl: ERROR
-
-security:
-  oauth2:
-    sso:
-      loginPath: /login
-    client:
-      accessTokenUri: http://uaa-service/uaa/oauth/token
-      userAuthorizationUri: /uaa/oauth/authorize
-      clientId: oauth2-read-write-client
-      clientSecret: Pass@123
-    resource:
-      jwt:
-        keyValue: classpath:certs/selfsigned-public-key.txt
-      id: openid
-      serviceId: ${PREFIX:}resource
+    com.sun.jersey.server.impl: ERROR      
