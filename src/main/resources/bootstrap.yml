@@ -28,6 +28,9 @@ ribbon:
 zuul:
   add-proxy-headers: true
   sensitiveHeaders:
+  routes:    uaa-svcs:
+      path: "/uaa/**"
+      sensitive-headers:      strip-prefix: false          
   
 debug: true
   
@@ -72,8 +75,8 @@ security:
     sso:
       loginPath: /login
     client:
-      accessTokenUri: http://localhost:8769/uaa/oauth/token
-      userAuthorizationUri: http://localhost:8769/uaa/oauth/authorize
+      accessTokenUri: http://uaa-svcs/uaa/oauth/token
+      userAuthorizationUri: /uaa/oauth/authorize
       clientId: oauth2-read-write-client
       clientSecret: Pass@123
     resource:

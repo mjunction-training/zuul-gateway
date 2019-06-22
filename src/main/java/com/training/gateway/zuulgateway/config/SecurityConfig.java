@@ -1,7 +1,11 @@
 package com.training.gateway.zuulgateway.config;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -12,12 +16,23 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoRestTemplateCustomizer;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.oauth2.client.filter.OAuth2ClientContextFilter;
+import org.springframework.security.oauth2.client.token.AccessTokenProviderChain;
+import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.code.AuthorizationCodeAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.implicit.ImplicitAccessTokenProvider;
+import org.springframework.security.oauth2.client.token.grant.password.ResourceOwnerPasswordAccessTokenProvider;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationManager;
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationProcessingFilter;
@@ -44,34 +59,34 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private ResourceServerTokenServices resourceServerTokenServices;
 
-	/*
-	 * @Bean
-	 *
-	 * @Primary public OAuth2ClientContextFilter dynamicOauth2ClientContextFilter()
-	 * { return new DynamicOauth2ClientContextFilter(); }
-	 *
-	 * @Bean public UserInfoRestTemplateCustomizer userInfoRestTemplateCustomizer(
-	 * final LoadBalancerInterceptor loadBalancerInterceptor) {
-	 *
-	 * return template -> {
-	 *
-	 * final List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-	 * interceptors.add(loadBalancerInterceptor);
-	 *
-	 * final AccessTokenProviderChain accessTokenProviderChain = Stream .of(new
-	 * AuthorizationCodeAccessTokenProvider(), new ImplicitAccessTokenProvider(),
-	 * new ResourceOwnerPasswordAccessTokenProvider(), new
-	 * ClientCredentialsAccessTokenProvider()) .peek(tp ->
-	 * tp.setInterceptors(interceptors))
-	 * .collect(Collectors.collectingAndThen(Collectors.toList(),
-	 * AccessTokenProviderChain::new));
-	 *
-	 * template.setAccessTokenProvider(accessTokenProviderChain);
-	 *
-	 * };
-	 *
-	 * }
-	 */
+	@Bean
+
+	@Primary
+	public OAuth2ClientContextFilter dynamicOauth2ClientContextFilter() {
+		return new DynamicOauth2ClientContextFilter();
+	}
+
+	@Bean
+	public UserInfoRestTemplateCustomizer userInfoRestTemplateCustomizer(
+			final LoadBalancerInterceptor loadBalancerInterceptor) {
+
+		return template -> {
+
+			final List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+			interceptors.add(loadBalancerInterceptor);
+
+			final AccessTokenProviderChain accessTokenProviderChain = Stream
+					.of(new AuthorizationCodeAccessTokenProvider(), new ImplicitAccessTokenProvider(),
+							new ResourceOwnerPasswordAccessTokenProvider(), new ClientCredentialsAccessTokenProvider())
+					.peek(tp -> tp.setInterceptors(interceptors))
+					.collect(Collectors.collectingAndThen(Collectors.toList(), AccessTokenProviderChain::new));
+
+			template.setAccessTokenProvider(accessTokenProviderChain);
+
+		};
+
+	}
+
 	@Override
 	public void configure(final HttpSecurity http) throws Exception {
 
