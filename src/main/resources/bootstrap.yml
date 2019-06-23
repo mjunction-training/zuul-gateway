@@ -26,11 +26,46 @@ ribbon:
     enabled: true
 
 zuul:
+  host:    connect-timeout-millis: 60000
+    connection-request-timeout-millis: 60000
+    max-total-connections: 1000
+    socket-timeout-millis: 60000
+    time-to-live: 60000
+    time-unit: milliseconds
   add-proxy-headers: true
   sensitiveHeaders:
   routes:    uaa-svcs:
       path: "/uaa/**"
-      sensitive-headers:      strip-prefix: false          
+      service-id: uaa-svcs      sensitive-headers:      strip-prefix: false      user-svcs:
+      path: "/users/**"
+      service-id: user-svcs
+      sensitive-headers:
+      strip-prefix: false 
+    product-catalog:
+      path: "/catalog/**"
+      service-id: product-catalog
+      sensitive-headers:
+      strip-prefix: false
+    product-composite:
+      path: "/composite/**"
+      service-id: product-composite
+      sensitive-headers:
+      strip-prefix: false
+    review-svcs:
+      path: "/review/**"
+      service-id: review-svcs
+      sensitive-headers:
+      strip-prefix: false 
+    pricing-svcs:
+      path: "/pricing/**"
+      service-id: pricing-svcs
+      sensitive-headers:
+      strip-prefix: false
+    recomm-svcs:
+      path: "/recomm/**"
+      service-id: recomm-svcs
+      sensitive-headers:
+      strip-prefix: false  
   
 debug: true
   
