@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 
+import lombok.extern.log4j.Log4j2;
+
 // XXX While waiting for: //
 //https://github.com/spring-cloud/spring-cloud-netflix/issues/944
-
+@Log4j2
 @Component
 public class RelayTokenFilter extends ZuulFilter {
 
@@ -33,6 +35,9 @@ public class RelayTokenFilter extends ZuulFilter {
 		// We need our JWT tokens relayed to resource servers
 
 		headers.remove("authorization");
+
+		log.debug(() -> "************************" + currentContext.get("requestURI"));
+		log.debug(() -> "************************" + currentContext.getRouteHost());
 
 		return null;
 	}

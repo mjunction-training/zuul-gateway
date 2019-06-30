@@ -34,7 +34,8 @@ zuul:
     time-unit: milliseconds
   add-proxy-headers: true
   sensitiveHeaders:
-  routes:    uaa-svcs:
+  routes: 
+    uaa-svcs:
       path: "/uaa/**"
       service-id: uaa-svcs      sensitive-headers:      strip-prefix: false      user-svcs:
       path: "/users/**"

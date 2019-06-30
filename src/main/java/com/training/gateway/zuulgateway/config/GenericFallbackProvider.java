@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
 
 public class GenericFallbackProvider implements FallbackProvider {
+
 	private final String route;
 
 	public GenericFallbackProvider(final String route) {

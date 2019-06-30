@@ -38,10 +38,10 @@ import org.springframework.security.oauth2.provider.authentication.OAuth2Authent
 import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationProcessingFilter;
 import org.springframework.security.oauth2.provider.token.ResourceServerTokenServices;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -60,7 +60,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private ResourceServerTokenServices resourceServerTokenServices;
 
 	@Bean
-
 	@Primary
 	public OAuth2ClientContextFilter dynamicOauth2ClientContextFilter() {
 		return new DynamicOauth2ClientContextFilter();
@@ -73,6 +72,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		return template -> {
 
 			final List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+
 			interceptors.add(loadBalancerInterceptor);
 
 			final AccessTokenProviderChain accessTokenProviderChain = Stream
@@ -93,7 +93,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http.authorizeRequests().antMatchers("/uaa/**", "/login", "/index.html", "/home.html", "/testing.html")
 				.permitAll().anyRequest().authenticated().and().csrf()
 				.requireCsrfProtectionMatcher(csrfRequestMatcher()).csrfTokenRepository(csrfTokenRepository()).and()
-				.addFilterAfter(csrfHeaderFilter(), CsrfFilter.class)
+				.addFilterAfter(csrfHeaderFilter(), SessionManagementFilter.class)
 				.addFilterAfter(oAuth2AuthenticationProcessingFilter(), AbstractPreAuthenticatedProcessingFilter.class)
 				.logout().permitAll().logoutSuccessUrl("/").and().httpBasic().disable();
 	}

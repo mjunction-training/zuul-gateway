@@ -58,7 +58,7 @@ public class Application extends SpringBootServletInitializer {
 
 	@Bean
 	public FallbackProvider pricingSvcsZuulFallbackProvider() {
-		return new GenericFallbackProvider("pricinf-svcs");
+		return new GenericFallbackProvider("pricing-svcs");
 	}
 
 	@Bean
