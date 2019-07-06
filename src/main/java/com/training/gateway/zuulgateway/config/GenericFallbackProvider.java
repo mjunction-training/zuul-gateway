@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpResponse;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 public class GenericFallbackProvider implements FallbackProvider {
 
 	private final String route;
@@ -47,6 +50,7 @@ public class GenericFallbackProvider implements FallbackProvider {
 
 			@Override
 			public InputStream getBody() throws IOException {
+				log.error(() -> "Exception in zuul route :: " + route, cause);
 				return new ByteArrayInputStream(
 						("{\"message\":\"Sorry, Service is Down!\",\"exception\":\"" + cause.getMessage() + "\"}")
 								.getBytes());

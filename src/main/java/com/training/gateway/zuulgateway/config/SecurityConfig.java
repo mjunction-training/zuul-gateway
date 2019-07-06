@@ -1,5 +1,7 @@
 package com.training.gateway.zuulgateway.config;
 
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -14,7 +17,12 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoRestTemplateCustomizer;
 import org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor;
@@ -22,7 +30,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.Resource;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -44,6 +54,7 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
@@ -53,11 +64,26 @@ import org.springframework.web.util.WebUtils;
 @Order(value = 0)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
+	@Value("${server.ssl.key-store}")
+	private Resource keyStore;
+	@Value("${server.ssl.key-store-password}")
+	private String keyStorePassword;
+
 	private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
 	private static final String CSRF_HEADER_NAME = "X-XSRF-TOKEN";
 
 	@Autowired
 	private ResourceServerTokenServices resourceServerTokenServices;
+
+	@Bean
+	public RestTemplate restTemplate() throws Exception {
+		final SSLContext sslContext = new SSLContextBuilder()
+				.loadTrustMaterial(keyStore.getURL(), keyStorePassword.toCharArray()).build();
+		final SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
+		final HttpClient httpClient = HttpClients.custom().setSSLSocketFactory(socketFactory).build();
+		final HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+		return new RestTemplate(factory);
+	}
 
 	@Bean
 	@Primary
@@ -89,8 +115,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Override
 	public void configure(final HttpSecurity http) throws Exception {
-
-		http.authorizeRequests().antMatchers("/uaa/**", "/login", "/index.html", "/home.html", "/testing.html")
+		http.sessionManagement().sessionCreationPolicy(STATELESS).and().authorizeRequests()
+				.antMatchers("/uaa/**", "/login", "/index.html", "/home.html", "/testing.html", "/account-query/**")
 				.permitAll().anyRequest().authenticated().and().csrf()
 				.requireCsrfProtectionMatcher(csrfRequestMatcher()).csrfTokenRepository(csrfTokenRepository()).and()
 				.addFilterAfter(csrfHeaderFilter(), SessionManagementFilter.class)

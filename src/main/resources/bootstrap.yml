@@ -1,4 +1,7 @@
 spring:
+  redis:
+    host: localhost
+    port: 6379
   aop:
     proxy-target-class: true
   application:
@@ -26,6 +29,7 @@ ribbon:
     enabled: true
 
 zuul:
+  sslHostnameValidationEnabled: false
   host:    connect-timeout-millis: 60000
     connection-request-timeout-millis: 60000
     max-total-connections: 1000
@@ -66,7 +70,17 @@ zuul:
       path: "/recomm/**"
       service-id: recomm-svcs
       sensitive-headers:
-      strip-prefix: false  
+      strip-prefix: false 
+    account-query:
+      path: "/acct-q/**"
+      service-id: account-query
+      sensitive-headers:
+      strip-prefix: false
+    account-command:
+      path: "/acct-c/**"
+      service-id: account-command
+      sensitive-headers:
+      strip-prefix: false   
   
 debug: true
   
@@ -87,11 +101,24 @@ eureka:
 
 server:
   port: ${appPort:8083}
+  use-forward-headers: true
+  ssl:
+    trust-store-type: PKCS12
+    trust-store: 'classpath:certs/client-keystore.p12'
+    trust-store-password: password
+    key-store-type: PKCS12
+    key-store: 'classpath:certs/client-keystore.p12'
+    key-password: password
+    key-store-password: password
+    key-alias: client
+    client-auth: want
   
 info:
   component: Zuul API gateway (insecured)
     
 management:
+  server:
+    port: 7890    ssl:      enabled: false
   health:
     defaults:
       enabled: false
@@ -111,13 +138,13 @@ security:
     sso:
       loginPath: /login
     client:
-      accessTokenUri: http://uaa-svcs/uaa/oauth/token
+      accessTokenUri: https://uaa-svcs/uaa/oauth/token
       userAuthorizationUri: /uaa/oauth/authorize
       clientId: oauth2-read-write-client
       clientSecret: Pass@123
     resource:
       jwt:
-        key-uri: http://localhost:8769/uaa/oauth/token_key
+        key-uri: https://localhost:8769/uaa/oauth/token_key
       id: openid
       serviceId: ${PREFIX:}resource
 

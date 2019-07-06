@@ -3,6 +3,7 @@ package com.training.gateway.zuulgateway.config;
 
 import java.util.Set;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.netflix.zuul.ZuulFilter;
@@ -13,6 +14,7 @@ import lombok.extern.log4j.Log4j2;
 // XXX While waiting for: //
 //https://github.com/spring-cloud/spring-cloud-netflix/issues/944
 @Log4j2
+@Order(2)
 @Component
 public class RelayTokenFilter extends ZuulFilter {
 
@@ -21,10 +23,10 @@ public class RelayTokenFilter extends ZuulFilter {
 
 		final RequestContext currentContext = RequestContext.getCurrentContext();
 
-		// currentContext.addZuulRequestHeader("host",
-		// currentContext.getRequest().getHeader("host"));
+		currentContext.addZuulRequestHeader("host", currentContext.getRequest().getHeader("host"));
 
-		// currentContext.getZuulRequestHeaders().remove("x-forwarded-prefix");
+		// XXX
+		currentContext.getZuulRequestHeaders().remove("x-forwarded-prefix");
 
 		// Alter ignored headers as per: // //
 		// https://gitter.im/spring-cloud/spring-cloud?at=56fea31f11ea211749c3ed22
